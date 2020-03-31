@@ -1,27 +1,17 @@
 <!DOCTYPE html>
-<style>
-html,body { margin: 0; padding: 0; position: relative; }
-.style {
-        position:absolute;
-        top:0;
-        right:0;
-}
-.full-height {
-        height: 100vh;
-}
+<div class=twitchWrapper">
+	<script src= "https://player.twitch.tv/js/embed/v1.js"></script>
+	<div id="twitchStream"></div>
 
-</style>
-<div class="style"></div>
-<div id="twitch-embed"></div>
+	<script type="text/javascript">
+		var options = {
+    		width: 0,
+    		height: 0,
+    		channel: "indexmod", 
+    		controls: false
+		};
 
-<!-- Load the Twitch embed script -->
-<script src="https://embed.twitch.tv/embed/v1.js"></script>
-
-<!-- Create a Twitch.Embed object that will render within the "twitch-embed" root element. -->
-<script type="text/javascript">
-  new Twitch.Embed("twitch-embed", {
-        width: '100%',
-        height: '100%',
-        channel: "indexmod"
-  });
-</script>
+		var player = new Twitch.Player("twitchStream", options);
+		player.setVolume(0);
+	</script>
+</div>
