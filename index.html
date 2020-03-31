@@ -9,26 +9,9 @@ html,body { margin: 0; padding: 0; position: relative; }
 .full-height {
         height: 100vh;
 }
-#info-box {
-        height: 20px;
-        width: 100%;
-        text-align: center;
-        margin: 0;
-        padding: 0;
-        border: 0;
-        background: red;
-        color: white;
-        line-height: 20px;
-        font-size: 20px;
-        position: absolute;
-        bottom: 0px;
-        overflow: hidden;
-}
+
 </style>
-<div class="style">
-        <button id="style">Toggle twitch-embed height</button>
-</div>
-<div id="info-box">This is where document.body ends, at <span id="info"></span></div>
+<div class="style"></div>
 <div id="twitch-embed"></div>
 
 <!-- Load the Twitch embed script -->
@@ -41,25 +24,4 @@ html,body { margin: 0; padding: 0; position: relative; }
         height: '100%',
         channel: "indexmod"
   });
-</script>
-
-<script type="text/javascript">
-var embed = document.getElementById('twitch-embed');
-var info = document.getElementById('info');
-var cls = 'full-height';
-
-function updateInfo() {
-        info.textContent = document.body.clientHeight + 'px, #twitch-embed height is ' + embed.clientHeight + 'px';
-}
-updateInfo();
-
-document.getElementById('style').addEventListener('click', function() {
-        if (embed.classList.contains(cls)) {
-                embed.classList.remove(cls);
-        } else {
-                embed.classList.add(cls);
-        }
-        updateInfo();
-});
-
 </script>
