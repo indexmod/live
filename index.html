@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Твич</title>
+	<meta content="/swanlake" property="og:url">
+	<meta content="video" property="og:type">
+	<meta content="Лебединое озеро" property="og:title">
+	<meta content="swanlake.jpg" property="og:image">
+	<meta content="Andrei Deinichenko" property="og:autor">
+	<meta content="Web based video-art" property="og:description">
+	<meta content="" property="fb:app_id">
+	<link href="/css.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+
+<div class=twitchWrapper">
+	<script src= "https://player.twitch.tv/js/embed/v1.js"></script>
+	<div id="twitchStream"></div>
+
+	<script type="text/javascript">
+		var options = {
+    		width: 0,
+    		height: 0,
+    		channel: "shroud",
+    		controls: false
+		};
+
+		var player = new Twitch.Player("twitchStream", options);
+		player.setVolume(0);
+	</script>
+</div>
+
+
+</body>
+</html>
