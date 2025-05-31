@@ -1,0 +1,107 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live DJ Stream</title>
+  <meta name="description" content="DJ-сет с автосведением треков" />
+  <meta property="og:title" content="Live DJ Stream" />
+  <meta property="og:description" content="DJ-сет с автосведением треков" />
+  <meta property="og:image" content="https://live.indexmod.xyz/preview.jpg" />
+  <meta property="og:url" content="https://live.indexmod.xyz" />
+  <meta property="og:type" content="website" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background: black;
+      overflow: hidden;
+    }
+    video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <video autoplay muted loop playsinline>
+    <source src="dj.mp4" type="video/mp4" />
+  </video>
+
+  <script>
+    const musicPath = "./music/";
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let currentSource = null;
+    let nextSource = null;
+
+    async function getAudioFiles() {
+      const response = await fetch(musicPath);
+      const text = await response.text();
+      const files = [...text.matchAll(/href="([^"]+\.(mp3|wav|ogg|m4a))"/gi)].map(match => match[1]);
+      return files.map(f => musicPath + f);
+    }
+
+    function loadAudio(url) {
+      return fetch(url)
+        .then(response => response.arrayBuffer())
+        .then(data => audioContext.decodeAudioData(data));
+    }
+
+    async function playWithCrossfade(files, fadeDuration = 3) {
+      let index = 0;
+
+      async function scheduleNextTrack() {
+        const nextIndex = (index + 1) % files.length;
+        const [buffer1, buffer2] = await Promise.all([loadAudio(files[index]), loadAudio(files[nextIndex])]);
+
+        const now = audioContext.currentTime;
+
+        // текущий
+        currentSource = audioContext.createBufferSource();
+        const gain1 = audioContext.createGain();
+        currentSource.buffer = buffer1;
+        currentSource.connect(gain1).connect(audioContext.destination);
+        gain1.gain.setValueAtTime(1, now);
+        currentSource.start(now);
+
+        // следующий
+        nextSource = audioContext.createBufferSource();
+        const gain2 = audioContext.createGain();
+        nextSource.buffer = buffer2;
+        nextSource.connect(gain2).connect(audioContext.destination);
+        gain2.gain.setValueAtTime(0, now);
+        const nextStart = now + buffer1.duration - fadeDuration;
+        gain2.gain.linearRampToValueAtTime(1, nextStart + fadeDuration);
+        gain1.gain.linearRampToValueAtTime(0, nextStart + fadeDuration);
+        nextSource.start(nextStart);
+
+        // переход к следующему после окончания
+        setTimeout(() => {
+          index = nextIndex;
+          currentSource = nextSource;
+          scheduleNextTrack();
+        }, (buffer1.duration - fadeDuration) * 1000);
+      }
+
+      scheduleNextTrack();
+    }
+
+    window.addEventListener("click", async () => {
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
+      const files = await getAudioFiles();
+      if (files.length) playWithCrossfade(files);
+    }, { once: true });
+  </script>
+</body>
+</html>
+```
