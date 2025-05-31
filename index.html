@@ -28,19 +28,36 @@
       object-fit: cover;
       z-index: 1;
     }
+    #start-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    #start-text p {
+      font-size: 6vw;
+      font-weight: bold;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
 
-  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; pointer-events: none; z-index: 10;">
-    <p style="font-size: 6vw; font-weight: bold; color: white; font-family: Arial, sans-serif; text-align: center; margin: 0;">
-      ЗДЕСЬ СКОРО<br>БУДУ ИГРАТЬ Я
-    </p>
+  <div id="start-text">
+    <p>ЗДЕСЬ СКОРО<br>БУДУ ИГРАТЬ Я</p>
   </div>
-  <video src="your-video.mp4" autoplay muted loop style="width: 100%; height: 100%; object-fit: cover;"></video>
 
-
-    <video autoplay muted loop playsinline>
+  <video autoplay muted loop playsinline>
     <source src="dj.mp4" type="video/mp4" />
   </video>
 
@@ -72,26 +89,26 @@
 
         const now = audioContext.currentTime;
 
-        // текущий
-        currentSource = audioContext.createBufferSource();
+        const source1 = audioContext.createBufferSource();
         const gain1 = audioContext.createGain();
-        currentSource.buffer = buffer1;
-        currentSource.connect(gain1).connect(audioContext.destination);
+        source1.buffer = buffer1;
+        source1.connect(gain1).connect(audioContext.destination);
         gain1.gain.setValueAtTime(1, now);
-        currentSource.start(now);
+        source1.start(now);
 
-        // следующий
-        nextSource = audioContext.createBufferSource();
+        const source2 = audioContext.createBufferSource();
         const gain2 = audioContext.createGain();
-        nextSource.buffer = buffer2;
-        nextSource.connect(gain2).connect(audioContext.destination);
+        source2.buffer = buffer2;
+        source2.connect(gain2).connect(audioContext.destination);
         gain2.gain.setValueAtTime(0, now);
-        const nextStart = now + buffer1.duration - fadeDuration;
-        gain2.gain.linearRampToValueAtTime(1, nextStart + fadeDuration);
-        gain1.gain.linearRampToValueAtTime(0, nextStart + fadeDuration);
-        nextSource.start(nextStart);
+        const crossfadeStart = now + buffer1.duration - fadeDuration;
+        gain2.gain.linearRampToValueAtTime(1, crossfadeStart + fadeDuration);
+        gain1.gain.linearRampToValueAtTime(0, crossfadeStart + fadeDuration);
+        source2.start(crossfadeStart);
 
-        // переход к следующему после окончания
+        currentSource = source1;
+        nextSource = source2;
+
         setTimeout(() => {
           index = nextIndex;
           currentSource = nextSource;
@@ -102,7 +119,8 @@
       scheduleNextTrack();
     }
 
-    window.addEventListener("click", async () => {
+    document.getElementById('start-text').addEventListener("click", async () => {
+      document.getElementById('start-text').style.display = "none";
       if (audioContext.state === "suspended") {
         await audioContext.resume();
       }
