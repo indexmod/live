@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Здесь был я</title>
+  <title>Я</title>
   <meta name="description" content="DJ-сет с автосведением треков" />
   <meta property="og:title" content="Live DJ Stream" />
   <meta property="og:description" content="DJ-сет с автосведением треков" />
@@ -17,22 +17,39 @@
     video {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;
     }
-    #start-text {
+    #overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: flex; justify-content: center; align-items: center;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+    }
+    #triangle {
+      width: 0; height: 0;
+      border-top: 80px solid transparent;
+      border-bottom: 80px solid transparent;
+      border-left: 120px solid white;
+    }
+    #text {
+      display: none;
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
       display: flex; justify-content: center; align-items: center;
       font-size: 6vw; font-weight: bold; color: white; font-family: Arial, sans-serif; text-align: center;
-      cursor: pointer;
-      user-select: none;
       z-index: 10;
-      background: rgba(0,0,0,0.6);
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
 
-  <div id="start-text">
-    ЗДЕСЬ СКОРО<br>БУДУ ИГРАТЬ Я<br><small>Нажми, чтобы начать</small>
+  <div id="overlay">
+    <div id="triangle"></div>
+  </div>
+
+  <div id="text">
+    ЗДЕСЬ СКОРО<br>БУДУ ИГРАТЬ Я
   </div>
 
   <video autoplay muted loop playsinline>
@@ -42,12 +59,10 @@
   <script>
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Пути к аудиофайлам в репозитории (прямые ссылки)
     const audioFiles = [
       "https://live.indexmod.xyz/music/track1.mp3",
       "https://live.indexmod.xyz/music/track2.mp3",
       "https://live.indexmod.xyz/music/track3.mp3"
-      // Добавь остальные по аналогии
     ];
 
     let currentIndex = 0;
@@ -55,7 +70,7 @@
     let nextSource = null;
     let currentGain = null;
     let nextGain = null;
-    const fadeDuration = 4; // секунды кроссфейда
+    const fadeDuration = 4;
 
     async function loadAudio(url) {
       const response = await fetch(url);
@@ -70,7 +85,6 @@
       const nextIndex = (currentIndex + 1) % audioFiles.length;
       const bufferNext = await loadAudio(audioFiles[nextIndex]);
 
-      // Создаем текущий источник и гейн
       currentSource = audioContext.createBufferSource();
       currentGain = audioContext.createGain();
       currentSource.buffer = bufferCurrent;
@@ -78,23 +92,18 @@
       currentGain.gain.setValueAtTime(1, now);
       currentSource.start(now);
 
-      // Создаем следующий источник и гейн
       nextSource = audioContext.createBufferSource();
       nextGain = audioContext.createGain();
       nextSource.buffer = bufferNext;
       nextSource.connect(nextGain).connect(audioContext.destination);
       nextGain.gain.setValueAtTime(0, now);
 
-      // Рассчитываем время запуска следующего трека с учетом кроссфейда
       const nextStartTime = now + bufferCurrent.duration - fadeDuration;
 
       nextSource.start(nextStartTime);
-
-      // Запускаем кроссфейд
       currentGain.gain.linearRampToValueAtTime(0, nextStartTime + fadeDuration);
       nextGain.gain.linearRampToValueAtTime(1, nextStartTime + fadeDuration);
 
-      // Запускаем следующий цикл по окончании текущего трека
       setTimeout(() => {
         currentSource.stop();
         currentIndex = nextIndex;
@@ -104,11 +113,12 @@
       }, (bufferCurrent.duration - fadeDuration) * 1000);
     }
 
-    document.getElementById('start-text').addEventListener('click', async () => {
+    document.getElementById('overlay').addEventListener('click', async () => {
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
-      document.getElementById('start-text').style.display = 'none';
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('text').style.display = 'flex';
       startCrossfade();
     }, { once: true });
   </script>
