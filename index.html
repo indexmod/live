@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>СКОРО БУДУ ИГРАТЬ Я</title>
+  <title>СКОРО: Буду играть</title>
   <meta name="description" content="DJ-сет с автосведением треков" />
   <meta property="og:title" content="Live DJ Stream" />
   <meta property="og:description" content="DJ-сет с автосведением треков" />
@@ -11,7 +11,6 @@
   <meta property="og:url" content="https://live.indexmod.xyz" />
   <meta property="og:type" content="website" />
 
-  <!-- Favicon links с полным набором файлов -->
   <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="96x96" href="/favicons/favicon-96x96.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
@@ -20,7 +19,6 @@
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
   <link rel="manifest" href="/favicons/site.webmanifest" />
   <meta name="theme-color" content="#000000" />
-
 
   <style>
     html, body {
@@ -65,7 +63,7 @@
   </div>
 
   <div id="text">
-    ЗДЕСЬ СКОРО<br>БУДУ ИГРАТЬ Я
+    ЗДЕСЬ. СКОРО.<br>Буду играть
   </div>
 
   <video autoplay muted loop playsinline>
@@ -104,35 +102,41 @@
     async function startCrossfade(files) {
       let index = 0;
 
+      async function playTrack(buffer, gainValue = 1) {
+        const source = audioContext.createBufferSource();
+        const gain = audioContext.createGain();
+        source.buffer = buffer;
+        source.connect(gain).connect(masterGain);
+        gain.gain.value = gainValue;
+        return { source, gain };
+      }
+
       async function playNext() {
+        const currentIndex = index;
         const nextIndex = (index + 1) % files.length;
-        const buffer1 = await loadAudio(files[index]);
+
+        const buffer1 = await loadAudio(files[currentIndex]);
         const buffer2 = await loadAudio(files[nextIndex]);
 
         const now = audioContext.currentTime;
+        const safeFade = Math.min(fadeDuration, buffer1.duration / 2);
+        const crossStart = now + buffer1.duration - safeFade;
 
-        const source1 = audioContext.createBufferSource();
-        const gain1 = audioContext.createGain();
-        source1.buffer = buffer1;
-        source1.connect(gain1).connect(masterGain);
-        gain1.gain.setValueAtTime(1, now);
+        const { source: source1, gain: gain1 } = await playTrack(buffer1, 1);
+        const { source: source2, gain: gain2 } = await playTrack(buffer2, 0);
+
         source1.start(now);
+        source2.start(crossStart);
 
-        const source2 = audioContext.createBufferSource();
-        const gain2 = audioContext.createGain();
-        source2.buffer = buffer2;
-        source2.connect(gain2).connect(masterGain);
-        gain2.gain.setValueAtTime(0, now);
-
-        const nextStart = now + buffer1.duration - fadeDuration;
-        source2.start(nextStart);
-        gain1.gain.linearRampToValueAtTime(0, nextStart + fadeDuration);
-        gain2.gain.linearRampToValueAtTime(1, nextStart + fadeDuration);
+        gain1.gain.setValueAtTime(1, crossStart);
+        gain1.gain.linearRampToValueAtTime(0, crossStart + safeFade);
+        gain2.gain.setValueAtTime(0, crossStart);
+        gain2.gain.linearRampToValueAtTime(1, crossStart + safeFade);
 
         setTimeout(() => {
           index = nextIndex;
           playNext();
-        }, (buffer1.duration - fadeDuration) * 1000);
+        }, (buffer1.duration - safeFade) * 1000);
       }
 
       playNext();
