@@ -29,13 +29,19 @@
       z-index: 10;
     }
 
-    #loader {
-      font-size: 300px;
-      color: white;
+    #preloader {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      color: black;
+      font-size: 80px;
       font-family: Arial, sans-serif;
       display: none;
-      user-select: none;
-      z-index: 10;
+      justify-content: center;
+      align-items: center;
+      z-index: 9;
     }
 
     video {
@@ -52,13 +58,13 @@
 <body>
 
   <div id="playButton"></div>
-  <div id="loader">0%</div>
+  <div id="preloader">0%</div>
   <video id="videoPlayer" muted playsinline></video>
   <audio id="audioPlayer" loop src="audio.mp3"></audio>
 
   <script>
     const playButton = document.getElementById('playButton');
-    const loader = document.getElementById('loader');
+    const preloader = document.getElementById('preloader');
     const videoPlayer = document.getElementById('videoPlayer');
     const audioPlayer = document.getElementById('audioPlayer');
 
@@ -71,123 +77,116 @@
       '6.m4v'
     ];
 
-    let loadedVideos = new Set();
+    let loadedVideos = [];
     let lastVideo = null;
-    let firstVideoLoaded = false;
-    let audioReady = false;
+    let audioLoaded = false;
 
-    // Предзагрузка одного видео с процентом прогресса
-    function preloadFirstVideo() {
+    // Показываем прогресс аудио
+    function preloadAudioWithProgress() {
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('GET', videos[0], true);
+        xhr.open('GET', audioPlayer.src, true);
         xhr.responseType = 'blob';
-        xhr.onprogress = e => {
+
+        xhr.onprogress = (e) => {
           if (e.lengthComputable) {
             const percent = Math.round((e.loaded / e.total) * 100);
-            loader.textContent = percent + '%';
+            preloader.textContent = percent + '%';
           }
         };
+
         xhr.onload = () => {
           if (xhr.status === 200) {
-            const blobUrl = URL.createObjectURL(xhr.response);
-            loadedVideos.add(videos[0]);
-            firstVideoLoaded = true;
-            resolve(blobUrl);
-          } else reject();
+            const blob = xhr.response;
+            audioPlayer.src = URL.createObjectURL(blob);
+            audioLoaded = true;
+            resolve();
+          } else {
+            reject('Ошибка загрузки аудио');
+          }
         };
-        xhr.onerror = reject;
+
+        xhr.onerror = () => reject('Ошибка сети при загрузке аудио');
         xhr.send();
       });
     }
 
-    // Фоновая предзагрузка остальных видео
-    function preloadOtherVideos() {
-      videos.slice(1).forEach(v => {
+    // Предзагрузка видео по очереди
+    function preloadVideosSequentially() {
+      const queue = [...videos];
+
+      function loadNext() {
+        if (queue.length === 0) return;
+
+        const nextSrc = queue.shift();
         const vid = document.createElement('video');
-        vid.src = v;
+        vid.src = nextSrc;
         vid.preload = 'auto';
         vid.muted = true;
         vid.playsInline = true;
+
         vid.addEventListener('canplaythrough', () => {
-          loadedVideos.add(v);
+          loadedVideos.push(nextSrc);
+
+          // Если это первое видео — показать
+          if (loadedVideos.length === 1) {
+            videoPlayer.src = nextSrc;
+            videoPlayer.style.display = 'block';
+            videoPlayer.play();
+          }
+
+          // Загружаем следующее
+          loadNext();
         }, { once: true });
-      });
+      }
+
+      loadNext();
     }
 
-    // Проверка готовности аудио
-    function preloadAudio() {
-      return new Promise(resolve => {
-        audioPlayer.preload = 'auto';
-        audioPlayer.addEventListener('canplaythrough', () => {
-          audioReady = true;
-          resolve();
-        }, { once: true });
-        audioPlayer.load();
-      });
-    }
-
-    // Случайный выбор следующего видео
+    // Выбор случайного видео
     function getRandomVideo() {
-      const available = Array.from(loadedVideos).filter(v => v !== lastVideo);
+      const available = loadedVideos.filter(v => v !== lastVideo);
       if (available.length === 0) return lastVideo;
       const chosen = available[Math.floor(Math.random() * available.length)];
       lastVideo = chosen;
       return chosen;
     }
 
-    // Смена видео каждые 4 секунды
-    function startVideoLoop() {
-      videoPlayer.style.display = 'block';
-      function nextVideo() {
-        const next = getRandomVideo();
-        if (next) {
+    // Ротация загруженных видео
+    function startVideoRotation() {
+      setInterval(() => {
+        if (loadedVideos.length > 1) {
+          const next = getRandomVideo();
           videoPlayer.src = next;
-          videoPlayer.play().catch(()=>{});
+          videoPlayer.play();
         }
-      }
-      nextVideo();
-      setInterval(nextVideo, 4000);
+      }, 4000);
     }
 
-    // Основной запуск
-    async function startLaunch() {
-      loader.style.display = 'block';
+    async function startPlayback() {
+      playButton.style.display = 'none';
+      preloader.style.display = 'flex';
+      preloader.textContent = '0%';
 
+      try {
+        await preloadAudioWithProgress();
+        preloader.textContent = 'Готово';
+        await audioPlayer.play();
+        preloader.style.display = 'none';
+
+        // Начинаем подгрузку видео
+        preloadVideosSequentially();
+        startVideoRotation();
+      } catch (err) {
+        console.error(err);
+        preloader.textContent = 'Ошибка';
+      }
+    }
+
+    playButton.addEventListener('click', async () => {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       await audioContext.resume();
-
-      const [firstVideoURL] = await Promise.all([
-        preloadFirstVideo(),
-        preloadAudio()
-      ]);
-
-      if (!firstVideoLoaded || !audioReady) {
-        alert('Ошибка: не удалось загрузить аудио или видео.');
-        location.reload();
-        return;
-      }
-
-      // Запускаем основное видео и звук
-      videoPlayer.src = firstVideoURL;
-      videoPlayer.style.display = 'block';
-      try {
-        await Promise.all([videoPlayer.play(), audioPlayer.play()]);
-      } catch (e) {
-        console.error('Ошибка запуска медиа:', e);
-      }
-
-      // Фоновая загрузка остальных
-      preloadOtherVideos();
-
-      // Запуск ротации
-      startVideoLoop();
-      loader.style.display = 'none';
-    }
-
-    playButton.addEventListener('click', () => {
-      playButton.style.display = 'none';
-      startLaunch();
+      startPlayback();
     });
   </script>
 </body>
