@@ -1,69 +1,36 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LIVE Stream</title>
-
 <style>
 html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  background: black;
-  overflow: hidden;
+  margin:0; padding:0;
+  width:100%; height:100%;
+  background:black; overflow:hidden;
 }
-
-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
+body {display:flex; justify-content:center; align-items:center;}
 #playButton {
-  width: 0;
-  height: 0;
-  border-left: 120px solid white;
-  border-top: 80px solid transparent;
-  border-bottom: 80px solid transparent;
-  cursor: pointer;
-  z-index: 10;
-  transition: opacity 1s ease;
+  width:0; height:0;
+  border-left:120px solid white;
+  border-top:80px solid transparent;
+  border-bottom:80px solid transparent;
+  cursor:pointer; z-index:10; transition:opacity 1s;
 }
-
 #introText {
-  position: fixed;
-  inset: 0;
-  background: black;
-  color: white;
-  font-family: Arial, sans-serif;
-  font-size: 28px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 80px;
-  box-sizing: border-box;
-  opacity: 0;
-  transition: opacity 2s ease;
-  z-index: 9;
+  position:fixed; inset:0;
+  background:black; color:white;
+  font-family:Arial,sans-serif; font-size:28px;
+  display:flex; justify-content:center; align-items:center;
+  padding:80px; box-sizing:border-box;
+  opacity:0; transition:opacity 2s; z-index:9;
 }
-
-video {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background: black;
-  z-index: 1;
-}
-
-.fade-in { opacity: 1 !important; }
-.fade-out { opacity: 0 !important; }
+video {position:fixed; inset:0; width:100%; height:100%; object-fit:cover; background:black; z-index:1;}
+.fade-in{opacity:1 !important;}
+.fade-out{opacity:0 !important;}
 </style>
 </head>
-
 <body>
 
 <div id="playButton"></div>
@@ -80,121 +47,88 @@ video {
 <audio id="audioPlayer" loop src="audio.mp3"></audio>
 
 <script>
-/* ================= CONFIG ================= */
-
 const BASE = 'https://pub-581ad16b881c4c508b223afe7425cecd.r2.dev/';
 const FILES = ['01.mp4','02.mp4','03.mp4','04.mp4','05.mp4','06.mp4','07.mp4'];
-const VIDEOS = FILES.map(v => BASE + v);
-
-const START_BUFFER_SECONDS = 1.2;
-const STALL_TIMEOUT = 6000;
-
-/* ================= UTILS ================= */
-
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-}
-
-/* ================= STATE ================= */
+const VIDEOS = FILES.map(v=>BASE+v);
 
 const playButton = document.getElementById('playButton');
 const introText = document.getElementById('introText');
 const video = document.getElementById('videoPlayer');
 const audio = document.getElementById('audioPlayer');
 
-let queue = [];
-let index = 0;
-let bufferVideo = null;
-let stallTimer = null;
+let queue=[], index=0, bufferVideo=null, stallTimer=null;
 
-/* ================= CORE ================= */
-
-function buildQueue() {
-  queue = [...VIDEOS];
-  shuffle(queue);
-  index = 0;
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
 }
 
-function preloadNext() {
-  const v = document.createElement('video');
-  v.src = queue[(index + 1) % queue.length];
-  v.preload = 'auto';
-  v.muted = true;
-  v.playsInline = true;
-  v.crossOrigin = 'anonymous';
+function buildQueue(){
+  queue=[...VIDEOS];
+  shuffle(queue);
+  index=0;
+}
+
+function preloadNext(){
+  const v=document.createElement('video');
+  v.src=queue[(index+1)%queue.length];
+  v.preload='auto';
+  v.muted=true; v.playsInline=true; v.crossOrigin='anonymous';
   return v;
 }
 
-function watchdog() {
+function watchdog(){
   clearTimeout(stallTimer);
-  stallTimer = setTimeout(() => {
-    console.warn('stall detected → skip');
-    next();
-  }, STALL_TIMEOUT);
+  stallTimer=setTimeout(()=>{next();},6000);
 }
 
-function playCurrent() {
-  video.src = queue[index];
+function playCurrent(){
+  video.src=queue[index];
   video.play();
   watchdog();
-  bufferVideo = preloadNext();
+  bufferVideo=preloadNext();
 }
 
-function next() {
+function next(){
   index++;
-  if (index >= queue.length) {
-    buildQueue(); // новый раунд без повторов
-  }
-  video.src = bufferVideo.src;
+  if(index>=queue.length){buildQueue();}
+  video.src=bufferVideo.src;
   video.play();
   watchdog();
-  bufferVideo = preloadNext();
+  bufferVideo=preloadNext();
 }
 
-/* ================= EVENTS ================= */
+video.addEventListener('ended',next);
+video.addEventListener('playing',watchdog);
+video.addEventListener('waiting',watchdog);
 
-video.addEventListener('ended', next);
-video.addEventListener('playing', watchdog);
-video.addEventListener('waiting', watchdog);
-
-/* ================= START ================= */
-
-async function start() {
-  playButton.style.display = 'none';
+async function start(){
+  playButton.style.display='none';
   introText.classList.add('fade-in');
 
-  // аудио запускаем после user gesture
-  audio.preload = 'auto';
-  await audio.play();
+  audio.preload='auto'; await audio.play();
 
   buildQueue();
 
-  video.preload = 'metadata';
-  video.src = queue[0];
+  video.preload='metadata';
+  video.src=queue[0];
 
-  video.addEventListener('loadedmetadata', () => {
-    if (video.duration > START_BUFFER_SECONDS) {
-      video.currentTime = START_BUFFER_SECONDS;
-    }
-  }, { once: true });
+  video.addEventListener('loadedmetadata',()=>{
+    if(video.duration>1.2){video.currentTime=1.2;}
+  },{once:true});
 
-  video.addEventListener('canplay', () => {
-    setTimeout(() => {
-      introText.classList.add('fade-out');
-      playCurrent();
-    }, 1200);
-  }, { once: true });
+  video.addEventListener('canplay',()=>{
+    setTimeout(()=>{introText.classList.add('fade-out'); playCurrent();},1200);
+  },{once:true});
 }
 
-playButton.addEventListener('click', async () => {
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+playButton.addEventListener('click',async()=>{
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
   await ctx.resume();
   start();
 });
 </script>
-
 </body>
 </html>
