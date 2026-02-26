@@ -64,7 +64,7 @@ video {
   Miserablism
 </div>
 
-<video id="videoPlayer" muted playsinline loop></video>
+<video id="videoPlayer" muted playsinline loop preload="auto"></video>
 <audio id="audioPlayer" loop src="/live/audio.mp3"></audio>
 
 <script>
@@ -73,18 +73,23 @@ const introText = document.getElementById('introText');
 const video = document.getElementById('videoPlayer');
 const audio = document.getElementById('audioPlayer');
 
-video.src = "/live/video.mp4"; // один файл видео, который воспроизводится в петле
+video.src = "/live/video.mp4"; // Видео один файл
+video.preload = "auto"; // загружает видео заранее для быстрой старта
 
 async function start(){
   playButton.style.display='none';
   introText.classList.add('fade-in');
 
+  // Старт аудио
   await audio.play().catch(e=>console.log("Audio error:", e));
+
+  // Ждём пока браузер закеширует видео
+  video.load();
 
   setTimeout(()=>{
     introText.classList.add('fade-out');
     video.play().catch(e=>console.log("Video error:", e));
-  },1500);
+  },500); // чуть быстрее, минимальная задержка
 }
 
 playButton.addEventListener('click', start);
