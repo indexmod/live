@@ -4,54 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LIVE Stream</title>
-
 <style>
-html, body {
-  margin:0; padding:0;
-  width:100%; height:100%;
-  background:black; overflow:hidden;
-}
-
-body {
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-
-#playButton {
-  width:0; height:0;
-  border-left:120px solid white;
-  border-top:80px solid transparent;
-  border-bottom:80px solid transparent;
-  cursor:pointer;
-  z-index:10;
-  transition:opacity 1s;
-}
-
-#introText {
-  position:fixed; inset:0;
-  background:black; color:white;
-  font-family:Arial,sans-serif;
-  font-size:26px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  padding:60px;
-  box-sizing:border-box;
-  text-align:center;
-  opacity:0;
-  transition:opacity 2s;
-  z-index:9;
-}
-
-video {
-  position:fixed; inset:0;
-  width:100%; height:100%;
-  object-fit:cover;
-  background:black;
-  z-index:1;
-}
-
+html, body { margin:0; padding:0; width:100%; height:100%; background:black; overflow:hidden; }
+body { display:flex; justify-content:center; align-items:center; }
+#playButton { width:0; height:0; border-left:120px solid white; border-top:80px solid transparent; border-bottom:80px solid transparent; cursor:pointer; z-index:10; transition:opacity 1s; }
+#introText { position:fixed; inset:0; background:black; color:white; font-family:Arial,sans-serif; font-size:26px; display:flex; justify-content:center; align-items:center; padding:60px; box-sizing:border-box; text-align:center; opacity:0; transition:opacity 2s; z-index:9; }
+video { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; background:black; z-index:1; }
 .fade-in { opacity:1 !important; }
 .fade-out { opacity:0 !important; }
 </style>
@@ -59,12 +17,9 @@ video {
 <body>
 
 <div id="playButton"></div>
+<div id="introText">Miserablism</div>
 
-<div id="introText">
-  Miserablism
-</div>
-
-<video id="videoPlayer" muted playsinline loop preload="auto"></video>
+<video id="videoPlayer" muted playsinline loop></video>
 <audio id="audioPlayer" loop src="/live/audio.mp3"></audio>
 
 <script>
@@ -73,26 +28,26 @@ const introText = document.getElementById('introText');
 const video = document.getElementById('videoPlayer');
 const audio = document.getElementById('audioPlayer');
 
-video.src = "/live/video.mp4"; // Видео один файл
-video.preload = "auto"; // загружает видео заранее для быстрой старта
+video.src = "/live/video.mp4";
+video.preload = "auto";
 
-async function start(){
-  playButton.style.display='none';
+// Запуск после клика
+playButton.addEventListener('click', async () => {
+  playButton.style.display = 'none';
   introText.classList.add('fade-in');
 
-  // Старт аудио
-  await audio.play().catch(e=>console.log("Audio error:", e));
+  // Создаём AudioContext для обхода блокировок браузера
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  await ctx.resume();
 
-  // Ждём пока браузер закеширует видео
-  video.load();
+  // Воспроизведение аудио и видео
+  await audio.play().catch(e => console.log("Audio error:", e));
+  await video.play().catch(e => console.log("Video error:", e));
 
-  setTimeout(()=>{
+  setTimeout(() => {
     introText.classList.add('fade-out');
-    video.play().catch(e=>console.log("Video error:", e));
-  },500); // чуть быстрее, минимальная задержка
-}
-
-playButton.addEventListener('click', start);
+  }, 500);
+});
 </script>
 
 </body>
