@@ -20,7 +20,7 @@ video { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; back
 <div id="introText">Miserablism</div>
 
 <video id="videoPlayer" muted playsinline loop preload="auto"></video>
-<audio id="audioPlayer" loop src="/live/audio.mp3"></audio>
+<audio id="audioPlayer" loop></audio>
 
 <script>
 const playButton = document.getElementById('playButton');
@@ -28,30 +28,32 @@ const introText = document.getElementById('introText');
 const video = document.getElementById('videoPlayer');
 const audio = document.getElementById('audioPlayer');
 
-video.src = "/live/video.mp4";
+// Пути к файлам — корректные для GitHub Pages / собственного домена
+const BASE = location.origin + "/live";
+video.src = BASE + "/video.mp4";
+audio.src = BASE + "/audio.mp3";
 video.preload = "auto";
 
-// Запуск после клика
+// Старт после клика
 playButton.addEventListener('click', async () => {
   playButton.style.display = 'none';
   introText.classList.add('fade-in');
 
-  // Создаём AudioContext для разрешения звука
+  // AudioContext для обхода блокировок браузера
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   await ctx.resume();
 
   // Воспроизведение аудио
   await audio.play().catch(e => console.log("Audio error:", e));
 
-  // Событие canplay — видео начинает сразу, как только подгружена часть
+  // Воспроизведение видео сразу после загрузки части файла
   video.addEventListener('canplay', () => {
     video.play().catch(e => console.log("Video error:", e));
   }, {once:true});
 
-  // Загружаем видео
   video.load();
 
-  // Убираем текст через 0.5 секунды
+  // Fade-out текста
   setTimeout(() => {
     introText.classList.add('fade-out');
   }, 500);
