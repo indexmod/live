@@ -19,7 +19,7 @@ video { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; back
 <div id="playButton"></div>
 <div id="introText">Miserablism</div>
 
-<video id="videoPlayer" muted playsinline controls></video>
+<video id="videoPlayer" muted playsinline></video>
 <audio id="audioPlayer" loop></audio>
 
 <!-- HLS.js -->
@@ -33,8 +33,10 @@ const audio = document.getElementById('audioPlayer');
 const BASE = location.origin + "/live";
 const HLS_URL = BASE + "/video.m3u8";
 audio.src = BASE + "/audio.mp3";
+audio.loop = true;
 
 playButton.addEventListener('click', async () => {
+  // Скрываем кнопку и показываем текст
   playButton.style.display = 'none';
   introText.classList.add('fade-in');
 
@@ -43,28 +45,22 @@ playButton.addEventListener('click', async () => {
   await ctx.resume();
 
   // Воспроизведение аудио
-  await audio.play().catch(e => console.log("Audio error:", e));
+  audio.play().catch(err => console.warn("Audio failed:", err));
 
-  // Подключаем HLS.js
+  // HLS видео
   if (Hls.isSupported()) {
     const hls = new Hls();
     hls.loadSource(HLS_URL);
     hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, function() {
-      video.play().catch(e => console.log("Video error:", e));
-    });
+    hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(e => console.log("Video error:", e)));
   } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    // Для Safari, поддержка natively
+    // Safari
     video.src = HLS_URL;
-    video.addEventListener('loadedmetadata', () => {
-      video.play().catch(e => console.log("Video error:", e));
-    });
+    video.addEventListener('loadedmetadata', () => video.play().catch(e => console.log("Video error:", e)));
   }
 
-  // Fade-out текста
-  setTimeout(() => {
-    introText.classList.add('fade-out');
-  }, 500);
+  // Скрываем текст через 0.5 сек
+  setTimeout(() => introText.classList.add('fade-out'), 500);
 });
 </script>
 
