@@ -10,25 +10,48 @@ html, body {
   width:100%; height:100%;
   background:black; overflow:hidden;
 }
-body {display:flex; justify-content:center; align-items:center;}
+body {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
 #playButton {
   width:0; height:0;
   border-left:120px solid white;
   border-top:80px solid transparent;
   border-bottom:80px solid transparent;
-  cursor:pointer; z-index:10; transition:opacity 1s;
+  cursor:pointer;
+  z-index:10;
+  transition:opacity 1s;
 }
+
 #introText {
   position:fixed; inset:0;
   background:black; color:white;
-  font-family:Arial,sans-serif; font-size:28px;
-  display:flex; justify-content:center; align-items:center;
-  padding:80px; box-sizing:border-box;
-  opacity:0; transition:opacity 2s; z-index:9;
+  font-family:Arial,sans-serif;
+  font-size:26px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:60px;
+  box-sizing:border-box;
+  text-align:center;
+  opacity:0;
+  transition:opacity 2s;
+  z-index:9;
 }
-video {position:fixed; inset:0; width:100%; height:100%; object-fit:cover; background:black; z-index:1;}
-.fade-in{opacity:1 !important;}
-.fade-out{opacity:0 !important;}
+
+video {
+  position:fixed; inset:0;
+  width:100%; height:100%;
+  object-fit:cover;
+  background:black;
+  z-index:1;
+}
+
+.fade-in { opacity:1 !important; }
+.fade-out { opacity:0 !important; }
 </style>
 </head>
 <body>
@@ -36,11 +59,8 @@ video {position:fixed; inset:0; width:100%; height:100%; object-fit:cover; backg
 <div id="playButton"></div>
 
 <div id="introText">
-  <div style="border:2px solid white; padding:20px;">
-    Этот проект исследует лайв, который создаётся сам — без монтажа, без сценария.<br>
-    Видеофрагменты из мастерской художника объединяются в непрерывный поток.<br>
-    Потерпите — идёт загрузка…
-  </div>
+  Этот проект — поток мастерской.<br>
+  Без сценария. Без монтажа.
 </div>
 
 <video id="videoPlayer" muted playsinline crossorigin="anonymous"></video>
@@ -75,7 +95,9 @@ function preloadNext(){
   const v=document.createElement('video');
   v.src=queue[(index+1)%queue.length];
   v.preload='auto';
-  v.muted=true; v.playsInline=true; v.crossOrigin='anonymous';
+  v.muted=true;
+  v.playsInline=true;
+  v.crossOrigin='anonymous';
   return v;
 }
 
@@ -108,7 +130,8 @@ async function start(){
   playButton.style.display='none';
   introText.classList.add('fade-in');
 
-  audio.preload='auto'; await audio.play();
+  audio.preload='auto';
+  await audio.play();
 
   buildQueue();
 
@@ -116,11 +139,16 @@ async function start(){
   video.src=queue[0];
 
   video.addEventListener('loadedmetadata',()=>{
-    if(video.duration>1.2){video.currentTime=1.2;}
+    if(video.duration>1.2){
+      video.currentTime=1.2;
+    }
   },{once:true});
 
   video.addEventListener('canplay',()=>{
-    setTimeout(()=>{introText.classList.add('fade-out'); playCurrent();},1200);
+    setTimeout(()=>{
+      introText.classList.add('fade-out');
+      playCurrent();
+    },1000);
   },{once:true});
 }
 
@@ -130,5 +158,6 @@ playButton.addEventListener('click',async()=>{
   start();
 });
 </script>
+
 </body>
 </html>
