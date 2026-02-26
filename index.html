@@ -36,37 +36,30 @@ audio.src = BASE + "/audio.mp3";
 audio.loop = true;
 
 playButton.addEventListener('click', async () => {
+  // Скрываем кнопку и показываем текст
   playButton.style.display = 'none';
   introText.classList.add('fade-in');
 
-  // AudioContext для обхода блокировки
+  // AudioContext для обхода блокировок
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   await ctx.resume();
 
-  // Запуск аудио
+  // Воспроизведение аудио
   audio.play().catch(err => console.warn("Audio failed:", err));
 
-  // Запуск HLS видео
+  // HLS видео
   if (Hls.isSupported()) {
     const hls = new Hls();
     hls.loadSource(HLS_URL);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(e => console.log("Video error:", e)));
-
-    // Видео в цикле
-    video.addEventListener('ended', () => {
-      video.currentTime = 0;
-      video.play();
-    });
-
   } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    // Safari native support
+    // Safari
     video.src = HLS_URL;
-    video.loop = true;
     video.addEventListener('loadedmetadata', () => video.play().catch(e => console.log("Video error:", e)));
   }
 
-  // Fade-out текста через 0.5 сек
+  // Скрываем текст через 0.5 сек
   setTimeout(() => introText.classList.add('fade-out'), 500);
 });
 </script>
