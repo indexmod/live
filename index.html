@@ -64,71 +64,26 @@ video {
   Miserablism
 </div>
 
-<video id="videoPlayer" muted playsinline></video>
+<video id="videoPlayer" muted playsinline loop></video>
 <audio id="audioPlayer" loop src="/live/audio.mp3"></audio>
 
 <script>
-// Пути к видео для репозитория "live" или собственного домена
-const FILES = [
-  '/live/1.mp4',
-  '/live/2.mp4',
-  '/live/3.mp4',
-  '/live/4.mp4'
-];
-
 const playButton = document.getElementById('playButton');
 const introText = document.getElementById('introText');
 const video = document.getElementById('videoPlayer');
 const audio = document.getElementById('audioPlayer');
 
-let playlist = [];
-let index = 0;
+video.src = "/live/video.mp4"; // один файл видео, который воспроизводится в петле
 
-// Функция перемешивания плейлиста
-function shuffle(array){
-  for(let i=array.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [array[i],array[j]]=[array[j],array[i]];
-  }
-}
-
-// Создание и перемешивание плейлиста
-function buildPlaylist(){
-  playlist = [...FILES];
-  shuffle(playlist);
-  index = 0;
-}
-
-// Проиграть конкретное видео
-function playVideo(i){
-  video.src = playlist[i];
-  video.load();
-  video.play().catch(e => console.log("Video error:", e));
-}
-
-// Перейти к следующему видео
-function nextVideo(){
-  index++;
-  if(index >= playlist.length){
-    buildPlaylist();
-  }
-  playVideo(index);
-}
-
-video.addEventListener('ended', nextVideo);
-
-// Запуск потока при клике
 async function start(){
   playButton.style.display='none';
   introText.classList.add('fade-in');
 
   await audio.play().catch(e=>console.log("Audio error:", e));
 
-  buildPlaylist();
-
   setTimeout(()=>{
     introText.classList.add('fade-out');
-    playVideo(index);
+    video.play().catch(e=>console.log("Video error:", e));
   },1500);
 }
 
