@@ -61,15 +61,20 @@ video {
 <div id="playButton"></div>
 
 <div id="introText">
-  Этот проект — поток мастерской.<br>
-  Без сценария. Без монтажа.
+  Miserablism
 </div>
 
 <video id="videoPlayer" muted playsinline></video>
-<audio id="audioPlayer" loop src="audio.mp3"></audio>
+<audio id="audioPlayer" loop src="/live/audio.mp3"></audio>
 
 <script>
-const FILES = ['1.mp4','2.mp4','3.mp4','4.mp4'];
+// Пути к видео для репозитория "live" или собственного домена
+const FILES = [
+  '/live/1.mp4',
+  '/live/2.mp4',
+  '/live/3.mp4',
+  '/live/4.mp4'
+];
 
 const playButton = document.getElementById('playButton');
 const introText = document.getElementById('introText');
@@ -79,6 +84,7 @@ const audio = document.getElementById('audioPlayer');
 let playlist = [];
 let index = 0;
 
+// Функция перемешивания плейлиста
 function shuffle(array){
   for(let i=array.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
@@ -86,17 +92,21 @@ function shuffle(array){
   }
 }
 
+// Создание и перемешивание плейлиста
 function buildPlaylist(){
   playlist = [...FILES];
   shuffle(playlist);
   index = 0;
 }
 
+// Проиграть конкретное видео
 function playVideo(i){
   video.src = playlist[i];
+  video.load();
   video.play().catch(e => console.log("Video error:", e));
 }
 
+// Перейти к следующему видео
 function nextVideo(){
   index++;
   if(index >= playlist.length){
@@ -107,6 +117,7 @@ function nextVideo(){
 
 video.addEventListener('ended', nextVideo);
 
+// Запуск потока при клике
 async function start(){
   playButton.style.display='none';
   introText.classList.add('fade-in');
