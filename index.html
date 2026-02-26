@@ -4,12 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LIVE Stream</title>
+
 <style>
 html, body {
   margin:0; padding:0;
   width:100%; height:100%;
   background:black; overflow:hidden;
 }
+
 body {
   display:flex;
   justify-content:center;
@@ -63,20 +65,19 @@ video {
   Без сценария. Без монтажа.
 </div>
 
-<video id="videoPlayer" muted playsinline crossorigin="anonymous"></video>
+<video id="videoPlayer" muted playsinline></video>
 <audio id="audioPlayer" loop src="audio.mp3"></audio>
 
 <script>
-const BASE = 'https://pub-581ad16b881c4c508b223afe7425cecd.r2.dev/';
-const FILES = ['01.mp4','02.mp4','03.mp4','04.mp4','05.mp4','06.mp4','07.mp4'];
-const VIDEOS = FILES.map(v=>BASE+v);
+const FILES = ['1.mp4','2.mp4','3.mp4','4.mp4'];
 
 const playButton = document.getElementById('playButton');
 const introText = document.getElementById('introText');
 const video = document.getElementById('videoPlayer');
 const audio = document.getElementById('audioPlayer');
 
-let queue=[], index=0, bufferVideo=null, stallTimer=null;
+let playlist = [];
+let index = 0;
 
 function shuffle(array){
   for(let i=array.length-1;i>0;i--){
@@ -85,78 +86,42 @@ function shuffle(array){
   }
 }
 
-function buildQueue(){
-  queue=[...VIDEOS];
-  shuffle(queue);
-  index=0;
+function buildPlaylist(){
+  playlist = [...FILES];
+  shuffle(playlist);
+  index = 0;
 }
 
-function preloadNext(){
-  const v=document.createElement('video');
-  v.src=queue[(index+1)%queue.length];
-  v.preload='auto';
-  v.muted=true;
-  v.playsInline=true;
-  v.crossOrigin='anonymous';
-  return v;
+function playVideo(i){
+  video.src = playlist[i];
+  video.play().catch(e => console.log("Video error:", e));
 }
 
-function watchdog(){
-  clearTimeout(stallTimer);
-  stallTimer=setTimeout(()=>{next();},6000);
-}
-
-function playCurrent(){
-  video.src=queue[index];
-  video.play();
-  watchdog();
-  bufferVideo=preloadNext();
-}
-
-function next(){
+function nextVideo(){
   index++;
-  if(index>=queue.length){buildQueue();}
-  video.src=bufferVideo.src;
-  video.play();
-  watchdog();
-  bufferVideo=preloadNext();
+  if(index >= playlist.length){
+    buildPlaylist();
+  }
+  playVideo(index);
 }
 
-video.addEventListener('ended',next);
-video.addEventListener('playing',watchdog);
-video.addEventListener('waiting',watchdog);
+video.addEventListener('ended', nextVideo);
 
 async function start(){
   playButton.style.display='none';
   introText.classList.add('fade-in');
 
-  audio.preload='auto';
-  await audio.play();
+  await audio.play().catch(e=>console.log("Audio error:", e));
 
-  buildQueue();
+  buildPlaylist();
 
-  video.preload='metadata';
-  video.src=queue[0];
-
-  video.addEventListener('loadedmetadata',()=>{
-    if(video.duration>1.2){
-      video.currentTime=1.2;
-    }
-  },{once:true});
-
-  video.addEventListener('canplay',()=>{
-    setTimeout(()=>{
-      introText.classList.add('fade-out');
-      playCurrent();
-    },1000);
-  },{once:true});
+  setTimeout(()=>{
+    introText.classList.add('fade-out');
+    playVideo(index);
+  },1500);
 }
 
-playButton.addEventListener('click',async()=>{
-  const ctx=new (window.AudioContext||window.webkitAudioContext)();
-  await ctx.resume();
-  start();
-});
+playButton.addEventListener('click', start);
 </script>
 
 </body>
