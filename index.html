@@ -3,7 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LIVE Stream</title>
+
+<title>Miserablism — LIVE</title>
+<meta name="description" content="Miserablism — independent looping audio & video live stream.">
+
+<!-- Open Graph -->
+<meta property="og:title" content="Miserablism — LIVE">
+<meta property="og:description" content="Miserablism — independent looping audio & video live stream.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/preview.png">
+<meta property="og:url" content="https://yourdomain.com/">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- Preload -->
+<link rel="preload" href="/audio/audio.m3u8" as="fetch" crossorigin>
+<link rel="preload" href="/live/video.m3u8" as="fetch" crossorigin>
+
+<!-- Favicons -->
+<link rel="apple-touch-icon" sizes="57x57" href="/favicons/apple-icon-57x57.png">
+<link rel="apple-touch-icon" sizes="60x60" href="/favicons/apple-icon-60x60.png">
+<link rel="apple-touch-icon" sizes="72x72" href="/favicons/apple-icon-72x72.png">
+<link rel="apple-touch-icon" sizes="76x76" href="/favicons/apple-icon-76x76.png">
+<link rel="apple-touch-icon" sizes="114x114" href="/favicons/apple-icon-114x114.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/favicons/apple-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="144x144" href="/favicons/apple-icon-144x144.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/favicons/apple-icon-152x152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-icon-180x180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-icon-192x192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="96x96" href="/favicons/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png">
+<link rel="manifest" href="/favicons/manifest.json">
+<meta name="msapplication-TileColor" content="#000000">
+<meta name="msapplication-TileImage" content="/favicons/ms-icon-144x144.png">
+<meta name="theme-color" content="#000000">
 
 <style>
 html, body {
@@ -13,6 +46,7 @@ html, body {
   height:100%;
   background:black;
   overflow:hidden;
+  font-family:Arial, sans-serif;
 }
 
 body {
@@ -21,7 +55,7 @@ body {
   align-items:center;
 }
 
-/* Кнопка */
+/* Play button */
 #playButton {
   width:0;
   height:0;
@@ -33,24 +67,24 @@ body {
   transition:opacity 1s;
 }
 
-/* Текст */
+/* Intro text */
 #introText {
   position:fixed;
   inset:0;
   background:black;
   color:white;
-  font-family:Arial, sans-serif;
   font-size:26px;
   display:flex;
   justify-content:center;
   align-items:center;
+  padding:60px;
   text-align:center;
   opacity:0;
-  transition:opacity 3s ease;
+  transition:opacity 4s ease;
   z-index:9;
 }
 
-/* Видео */
+/* Video */
 video {
   position:fixed;
   inset:0;
@@ -59,14 +93,12 @@ video {
   object-fit:cover;
   background:black;
   opacity:0;
-  transition:opacity 10s ease; /* плавное появление 10 сек */
+  transition:opacity 10s ease;
   z-index:1;
 }
 
-.show-text { opacity:1; }
-.hide-text { opacity:0; }
-.show-video { opacity:1; }
-
+.fade-in { opacity:1 !important; }
+.fade-out { opacity:0 !important; }
 </style>
 </head>
 <body>
@@ -74,51 +106,63 @@ video {
 <div id="playButton"></div>
 <div id="introText">Miserablism</div>
 
-<video id="videoPlayer" muted playsinline></video>
-<audio id="audioPlayer" src="/audio.mp3" loop></audio>
+<video id="videoPlayer" playsinline></video>
+<audio id="audioPlayer"></audio>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
 <script>
-const playButton = document.getElementById('playButton');
-const introText = document.getElementById('introText');
+
 const video = document.getElementById('videoPlayer');
 const audio = document.getElementById('audioPlayer');
+const playButton = document.getElementById('playButton');
+const introText = document.getElementById('introText');
 
-const HLS_URL = location.origin + "/live/video.m3u8";
+const VIDEO_HLS = "/live/video.m3u8";
+const AUDIO_HLS = "/audio/audio.m3u8";
 
-playButton.addEventListener('click', () => {
+playButton.addEventListener('click', async () => {
 
-  // Убираем кнопку
-  playButton.style.display = 'none';
+  playButton.style.opacity = 0;
+  setTimeout(() => playButton.remove(), 1000);
 
-  // Появляется текст
-  introText.classList.add('show-text');
+  introText.classList.add('fade-in');
 
-  // 🔊 Запуск аудио
-  audio.play().catch(e => console.log("Audio blocked:", e));
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  await ctx.resume();
 
-  // 🎬 Запуск видео (HLS)
+  /* AUDIO */
   if (Hls.isSupported()) {
-    const hls = new Hls();
-    hls.loadSource(HLS_URL);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      video.play();
-      video.classList.add('show-video'); // плавный fade 10 сек
+    const hlsAudio = new Hls();
+    hlsAudio.loadSource(AUDIO_HLS);
+    hlsAudio.attachMedia(audio);
+    hlsAudio.on(Hls.Events.MANIFEST_PARSED, () => {
+      audio.play().catch(()=>{});
     });
-  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.src = HLS_URL;
+  } else {
+    audio.src = AUDIO_HLS;
+    audio.play().catch(()=>{});
+  }
+
+  audio.loop = true;
+
+  /* VIDEO */
+  if (Hls.isSupported()) {
+    const hlsVideo = new Hls();
+    hlsVideo.loadSource(VIDEO_HLS);
+    hlsVideo.attachMedia(video);
+    hlsVideo.on(Hls.Events.MANIFEST_PARSED, () => {
+      video.play().catch(()=>{});
+      video.classList.add('fade-in');
+    });
+  } else {
+    video.src = VIDEO_HLS;
     video.addEventListener('loadedmetadata', () => {
-      video.play();
-      video.classList.add('show-video');
+      video.play().catch(()=>{});
+      video.classList.add('fade-in');
     });
   }
 
-  // Через 1.5 сек текст начинает исчезать (3 сек fade)
-  setTimeout(() => {
-    introText.classList.remove('show-text');
-  }, 1500);
+  setTimeout(() => introText.classList.add('fade-out'), 1500);
 
 });
 </script>
