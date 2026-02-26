@@ -4,14 +4,69 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LIVE Stream</title>
+
 <style>
-html, body { margin:0; padding:0; width:100%; height:100%; background:black; overflow:hidden; }
-body { display:flex; justify-content:center; align-items:center; }
-#playButton { width:0; height:0; border-left:120px solid white; border-top:80px solid transparent; border-bottom:80px solid transparent; cursor:pointer; z-index:10; transition:opacity 1s; }
-#introText { position:fixed; inset:0; background:black; color:white; font-family:Arial,sans-serif; font-size:26px; display:flex; justify-content:center; align-items:center; padding:60px; box-sizing:border-box; text-align:center; opacity:0; transition:opacity 2s; z-index:9; }
-video { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; background:black; z-index:1; }
-.fade-in { opacity:1 !important; }
-.fade-out { opacity:0 !important; }
+html, body {
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+  background:black;
+  overflow:hidden;
+}
+
+body {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+/* Кнопка */
+#playButton {
+  width:0;
+  height:0;
+  border-left:120px solid white;
+  border-top:80px solid transparent;
+  border-bottom:80px solid transparent;
+  cursor:pointer;
+  z-index:10;
+  transition:opacity 1s;
+}
+
+/* Текст */
+#introText {
+  position:fixed;
+  inset:0;
+  background:black;
+  color:white;
+  font-family:Arial, sans-serif;
+  font-size:26px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  opacity:0;
+  transition:opacity 3s ease;
+  z-index:9;
+}
+
+/* Видео */
+video {
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  background:black;
+  opacity:0;
+  transition:opacity 10s ease; /* плавное появление 10 сек */
+  z-index:1;
+}
+
+.show-text { opacity:1; }
+.hide-text { opacity:0; }
+.show-video { opacity:1; }
+
 </style>
 </head>
 <body>
@@ -20,47 +75,51 @@ video { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; back
 <div id="introText">Miserablism</div>
 
 <video id="videoPlayer" muted playsinline></video>
-<audio id="audioPlayer" loop></audio>
+<audio id="audioPlayer" src="/audio.mp3" loop></audio>
 
-<!-- HLS.js -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
 <script>
 const playButton = document.getElementById('playButton');
 const introText = document.getElementById('introText');
 const video = document.getElementById('videoPlayer');
 const audio = document.getElementById('audioPlayer');
 
-const BASE = location.origin + "/live";
-const HLS_URL = BASE + "/video.m3u8";
-audio.src = BASE + "/audio.mp3";
-audio.loop = true;
+const HLS_URL = location.origin + "/live/video.m3u8";
 
-playButton.addEventListener('click', async () => {
-  // Скрываем кнопку и показываем текст
+playButton.addEventListener('click', () => {
+
+  // Убираем кнопку
   playButton.style.display = 'none';
-  introText.classList.add('fade-in');
 
-  // AudioContext для обхода блокировок
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  await ctx.resume();
+  // Появляется текст
+  introText.classList.add('show-text');
 
-  // Воспроизведение аудио
-  audio.play().catch(err => console.warn("Audio failed:", err));
+  // 🔊 Запуск аудио
+  audio.play().catch(e => console.log("Audio blocked:", e));
 
-  // HLS видео
+  // 🎬 Запуск видео (HLS)
   if (Hls.isSupported()) {
     const hls = new Hls();
     hls.loadSource(HLS_URL);
     hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(e => console.log("Video error:", e)));
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      video.play();
+      video.classList.add('show-video'); // плавный fade 10 сек
+    });
   } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    // Safari
     video.src = HLS_URL;
-    video.addEventListener('loadedmetadata', () => video.play().catch(e => console.log("Video error:", e)));
+    video.addEventListener('loadedmetadata', () => {
+      video.play();
+      video.classList.add('show-video');
+    });
   }
 
-  // Скрываем текст через 0.5 сек
-  setTimeout(() => introText.classList.add('fade-out'), 500);
+  // Через 1.5 сек текст начинает исчезать (3 сек fade)
+  setTimeout(() => {
+    introText.classList.remove('show-text');
+  }, 1500);
+
 });
 </script>
 
