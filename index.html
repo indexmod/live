@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>Miserablism — looping audio & video live stream</title>
 <meta name="description" content="Independent live stream with looping audio & high-quality video.">
 
@@ -19,10 +20,36 @@
 <meta name="twitter:description" content="Independent live stream with looping audio & high-quality video.">
 <meta name="twitter:image" content="https://live.indexmod.xyz/preview.png">
 
+<!-- Favicon -->
+<link rel="apple-touch-icon" sizes="57x57" href="/favicons/apple-icon-57x57.png">
+<link rel="apple-touch-icon" sizes="60x60" href="/favicons/apple-icon-60x60.png">
+<link rel="apple-touch-icon" sizes="72x72" href="/favicons/apple-icon-72x72.png">
+<link rel="apple-touch-icon" sizes="76x76" href="/favicons/apple-icon-76x76.png">
+<link rel="apple-touch-icon" sizes="114x114" href="/favicons/apple-icon-114x114.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/favicons/apple-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="144x144" href="/favicons/apple-icon-144x144.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/favicons/apple-icon-152x152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-icon-180x180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-icon-192x192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="96x96" href="/favicons/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png">
+<link rel="manifest" href="/favicons/manifest.json">
+<meta name="msapplication-TileColor" content="#ffffff">
+<meta name="msapplication-TileImage" content="/favicons/ms-icon-144x144.png">
+<meta name="theme-color" content="#ffffff">
+
+<!-- Preload HLS -->
+<link rel="preload" href="/audio/audio.m3u8" as="fetch" crossorigin>
+<link rel="preload" href="/video/video.m3u8" as="fetch" crossorigin>
+
 <style>
 html, body {
-  margin:0; padding:0; width:100%; height:100%;
-  background:black; overflow:hidden; font-family:Arial, sans-serif;
+  margin:0; padding:0;
+  width:100%; height:100%;
+  background:black;
+  overflow:hidden;
+  font-family:Arial, sans-serif;
 }
 body { display:flex; justify-content:center; align-items:center; }
 
@@ -32,18 +59,18 @@ body { display:flex; justify-content:center; align-items:center; }
   border-left:120px solid white;
   border-top:80px solid transparent;
   border-bottom:80px solid transparent;
-  cursor:pointer;
-  z-index:10;
-  transition:opacity 1s;
+  cursor:pointer; z-index:10; transition:opacity 1s;
 }
 
 /* Intro text */
 #introText {
   position:fixed; inset:0;
-  background:black; color:white; font-size:26px;
+  background:black; color:white;
+  font-size:26px;
   display:flex; justify-content:center; align-items:center;
-  text-align:center; padding:60px; opacity:0;
-  transition:opacity 4s ease; z-index:9;
+  padding:60px; text-align:center;
+  opacity:0; transition:opacity 4s ease;
+  z-index:9;
 }
 
 /* Video */
@@ -51,10 +78,8 @@ video {
   position:fixed; inset:0;
   width:100%; height:100%;
   object-fit:cover; background:black;
-  opacity:0; transition:opacity 10s ease;
-  z-index:1;
+  opacity:0; transition:opacity 10s ease; z-index:1;
 }
-
 .fade-in { opacity:1 !important; }
 .fade-out { opacity:0 !important; }
 </style>
@@ -64,8 +89,8 @@ video {
 <div id="playButton"></div>
 <div id="introText">Miserablism</div>
 
-<video id="videoPlayer" playsinline preload="auto"></video>
-<audio id="audioPlayer" preload="auto" loop></audio>
+<video id="videoPlayer" playsinline></video>
+<audio id="audioPlayer"></audio>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
@@ -80,35 +105,23 @@ const AUDIO_HLS = "/audio/audio.m3u8";
 playButton.addEventListener('click', async () => {
   playButton.style.opacity = 0;
   setTimeout(() => playButton.remove(), 1000);
-
   introText.classList.add('fade-in');
 
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   await ctx.resume();
 
-  // ---------------- AUDIO ----------------
+  // -------- AUDIO --------
   if (Hls.isSupported()) {
-    const hlsAudio = new Hls({
-      maxBufferLength: 30,        // больше буфер для плавного воспроизведения
-      liveSyncDuration: 0,        // полностью независимая синхронизация
-      enableWorker: true
-    });
+    const hlsAudio = new Hls({ maxBufferLength: 30, liveSyncDuration: 0, enableWorker: true });
     hlsAudio.loadSource(AUDIO_HLS);
     hlsAudio.attachMedia(audio);
     hlsAudio.on(Hls.Events.MANIFEST_PARSED, () => audio.play().catch(()=>{}));
-  } else {
-    audio.src = AUDIO_HLS;
-    audio.play().catch(()=>{});
-  }
+  } else { audio.src = AUDIO_HLS; audio.play().catch(()=>{}); }
   audio.loop = true;
 
-  // ---------------- VIDEO ----------------
+  // -------- VIDEO --------
   if (Hls.isSupported()) {
-    const hlsVideo = new Hls({
-      maxBufferLength: 10,        // короткие сегменты быстрее подгружаются
-      backBufferLength: 5,        // держим немного сегментов в памяти
-      enableWorker: true
-    });
+    const hlsVideo = new Hls({ maxBufferLength: 10, backBufferLength: 5, enableWorker: true });
     hlsVideo.loadSource(VIDEO_HLS);
     hlsVideo.attachMedia(video);
     hlsVideo.on(Hls.Events.MANIFEST_PARSED, () => {
