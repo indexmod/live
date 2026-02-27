@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Miserablism</title>
-<meta name="description" content="Miserablism — independent looping audio & video live stream.">
-
 <title>Miserablism — looping audio & video live stream</title>
 <meta name="description" content="Miserablism — independent looping audio & video live stream, Pet Shop Boys track, high-quality visuals.">
 
@@ -44,8 +41,7 @@
 
 <!-- Preload -->
 <link rel="preload" href="/audio/audio.m3u8" as="fetch" crossorigin>
-<link rel="preload" href="/live/video.m3u8" as="fetch" crossorigin>
-
+<link rel="preload" href="/video/video.m3u8" as="fetch" crossorigin>
 
 <style>
 html, body {
@@ -120,17 +116,15 @@ video {
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
-
 const video = document.getElementById('videoPlayer');
 const audio = document.getElementById('audioPlayer');
 const playButton = document.getElementById('playButton');
 const introText = document.getElementById('introText');
 
-const VIDEO_HLS = "/live/video.m3u8";
+const VIDEO_HLS = "/video/video.m3u8"; // <- папка video
 const AUDIO_HLS = "/audio/audio.m3u8";
 
 playButton.addEventListener('click', async () => {
-
   playButton.style.opacity = 0;
   setTimeout(() => playButton.remove(), 1000);
 
@@ -172,7 +166,6 @@ playButton.addEventListener('click', async () => {
   }
 
   setTimeout(() => introText.classList.add('fade-out'), 1500);
-
 });
 </script>
 
